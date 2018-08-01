@@ -3,7 +3,7 @@ from functools import reduce
 
 import tensorflow as tf
 import numpy as np
-from typing import List
+from typing import List, Optional
 import scipy.signal
 
 # https://stackoverflow.com/questions/12201577/how-can-i-convert-an-rgb-image-into-grayscale-in-python
@@ -20,7 +20,7 @@ def pad_arrays(arrays: List) -> np.ndarray:
         padded[arr_slice] = arr
     return padded
 
-class Rollout:
+class Rollout(object):
 
         def __init__(self, partial_rollout):
             self.length = len(partial_rollout)
@@ -85,46 +85,46 @@ class BatchRollout(Rollout):
             self.val = np.concatenate((self.val, rollout.val), 0)
 
 
-class PartialRollout:
+class PartialRollout(object):
 
-    def __init__(self):
-        self.obs = None
-        self.act = None
-        self.rew = None
-        self.rew_in = None
-        self.length = 0
-        self.episode_rew = 0
+    def __init__(self) -> None:
+        self.obs: Optional[List] = None
+        self.act: Optional[List] = None
+        self.rew: Optional[List] = None
+        self.rew_in: Optional[List] = None
+        self.length: int = 0
+        self.episode_rew: float = 0
 
-    def addObs(self, obs):
+    def addObs(self, obs: np.ndarray) -> None:
         if self.obs is None:
             self.obs = []
         self.obs.append(obs)
         self.length += 1
 
-    def addAct(self, act):
+    def addAct(self, act: np.ndarray) -> None:
         if self.act is None:
             self.act = []
         self.act.append(act)
 
-    def addRew(self, rew):
+    def addRew(self, rew: float) -> None:
         if self.rew is None:
             self.rew = []
         self.rew.append(rew)
         self.episode_rew += rew
 
-    def addRewIn(self, rew):
+    def addRewIn(self, rew: float) -> None:
         if self.rew_in is None:
             self.rew_in = []
         self.rew_in.append(rew)
 
-    def finalize(self):
+    def finalize(self) -> Rollout:
         assert not self.obs or len(self.obs) == self.length, 'Observation length does not match rollout length'
         assert not self.act or len(self.act) == self.length, 'Action length does not match rollout length'
         assert not self.rew or len(self.rew) == self.length, 'Reward length does not match rollout length'
         assert not self.rew_in or len(self.rew_in) == self.length, 'Reward input length does not match rollout length'
         return Rollout(self)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.length
 
 class EnvironmentRunner:

@@ -1,6 +1,8 @@
+from abc import ABC, abstractmethod
+
 import tensorflow as tf
 
-class Trainer(object):
+class Trainer(ABC):
 
     def __init__(self, model, optimizer: str = 'adam') -> None:
         self._model = model
@@ -20,19 +22,20 @@ class Trainer(object):
         array = array / (tf.sqrt(var) + 1e-10)
         return array
 
-    def loss_function(self, features, labels, *args, **kwargs):
+    @abstractmethod
+    def loss_function(self, *args, **kwargs):
         raise NotImplementedError("Must implement a loss function.")
 
-    def grads_function(self, features, labels, *args, **kwargs):
+    def grads_function(self, *args, **kwargs):
         if tf.executing_eagerly():
             with tf.GradientTape() as tape:
-                loss = self.loss_function(features, labels, *args, **kwargs)
+                loss = self.loss_function(*args, **kwargs)
         
             total_loss, losses = self._unpack_losses(loss)
             grads = tape.gradient(total_loss, self._model.variables)
 
         else:
-            loss = self.loss_function(features, labels, *args, **kwargs)
+            loss = self.loss_function(*args, **kwargs)
             total_loss, losses = self._unpack_losses(loss)
             grads = self._optimizer.compute_gradients(total_loss, self._model.variables)
 
